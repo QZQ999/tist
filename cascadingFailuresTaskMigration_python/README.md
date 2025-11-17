@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ## 运行
 
 ```bash
-# 方法1: 使用运行脚本
+# 方法1: 使用运行脚本 (推荐)
 cd cascadingFailuresTaskMigration_python
 python run.py
 
@@ -36,14 +36,19 @@ cd cascadingFailuresTaskMigration_python
 python -m main.main
 ```
 
+**注意**:
+- 默认运行3个benchmark算法: CATM (LTM), KBTM (GreedyPath), HCTM-MPF (MPFTM)
+- OPT算法由于计算复杂度高(指数级),默认不运行
+- 如需运行OPT算法,请在`main.py`中设置`run_opt=True`,或使用更小的测试集(如Task6.txt)
+
 ## 算法说明
 
-项目实现了以下几种任务迁移算法:
+项目实现了论文中的所有benchmark算法:
 
-1. **MPFTM** (Multi-layer Potential Field Task Migration): 基于多层势场的任务迁移算法
-2. **LTM** (Load-based Task Migration): 基于负载的任务迁移算法
-3. **GreedyPath**: 基于贪心路径的任务迁移算法
-4. **Opt**: 优化算法
+1. **HCTM-MPF** (MPFTM): 论文提出的算法 - 基于多层势场的任务迁移
+2. **CATM** (LTM): Context-Aware Task Migration - 基于上下文的任务迁移
+3. **KBTM** (GreedyPath): Key-Based Task Migration - 基于关键节点的任务迁移
+4. **OPT**: Optimal Solution - 使用整数规划求最优解(计算密集)
 
 ## 主要特性
 
@@ -62,15 +67,30 @@ python -m main.main
 
 ## 输出结果
 
-程序输出包括:
-- meanExecuteCost: 平均执行成本
-- meanMigrationCost: 平均迁移成本
-- meanSurvivalRate: 平均存活率
-- robotLoadStd: 机器人负载标准差
-- taskSizeStd: 任务大小标准差
-- meanRobotCapacity: 平均机器人容量
-- meanTaskSize: 平均任务大小
-- targetOpt: 目标优化值
+程序会输出每个算法的详细结果和对比表格:
+
+```
+====================================================================================================
+COMPARISON TABLE OF ALL ALGORITHMS
+====================================================================================================
+Algorithm       Runtime(ms)  ExecCost     MigrCost     SurvRate     TotalCost    TargetOpt
+----------------------------------------------------------------------------------------------------
+CATM            0            43.4515      16.4903      0.7161       59.9417      5.3497
+KBTM            1            47.4214      18.0000      0.6948       65.4214      5.9168
+HCTM-MPF        4            44.2643      20.3267      0.7293       64.5910      5.8028
+====================================================================================================
+
+Best Algorithm: CATM (Lowest TargetOpt)
+====================================================================================================
+```
+
+指标说明:
+- **Runtime**: 算法运行时间(毫秒)
+- **ExecCost**: 平均执行成本
+- **MigrCost**: 平均迁移成本
+- **SurvRate**: 平均存活率
+- **TotalCost**: 总成本 (ExecCost + MigrCost)
+- **TargetOpt**: 目标优化值 (a × TotalCost - b × SurvRate),越小越好
 
 ## 开发说明
 
