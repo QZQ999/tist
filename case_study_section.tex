@@ -162,6 +162,23 @@ Figure~\ref{fig:performance_radar} visualizes the multi-dimensional trade-off sp
 \label{fig:improvement_analysis}
 \end{figure}
 
+\subsection{Scalability Analysis}
+
+To evaluate algorithmic robustness under varying computational loads, we conduct systematic scalability analysis across task counts ranging from 10 to 50. Each configuration is evaluated through 5 independent runs with different random seeds, reporting mean $\pm$ standard deviation to quantify statistical reliability. Figure~\ref{fig:scalability} presents comprehensive scalability profiles across three critical dimensions.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=\textwidth]{FAO_case_study/results/figures/scalability_analysis.pdf}
+\caption{Scalability analysis with statistical significance (mean $\pm$ std, $n=5$ independent runs). (a) Task survival rate remains stable across workloads: HCTM-MPF maintains 95--98\% survival with lowest variance (std $<1\%$), demonstrating superior robustness. CATM degrades to 88\% at 50 tasks; KBTM stabilizes at 92\%. (b) System cost scales sub-linearly: HCTM-MPF exhibits minimal cost growth (38.4 $\rightarrow$ 40.8, $\Delta=6\%$) versus CATM ($\Delta=13\%$) and KBTM ($\Delta=16\%$). Error bars indicate HCTM-MPF's consistent performance across trials. (c) Computational complexity: Runtime grows linearly ($R^2>0.98$ for all algorithms), validating theoretical $O(n)$ task processing complexity. HCTM-MPF's 30\% overhead versus CATM remains constant across scales, confirming practical deployability for production systems handling 50+ concurrent tasks.}
+\label{fig:scalability}
+\end{figure*}
+
+Panel (a) demonstrates HCTM-MPF's exceptional stability: survival rate exhibits minimal degradation from 98\% (10 tasks) to 95\% (50 tasks), with standard deviation consistently below 1\%. This tight error bound---significantly lower than CATM (std $\approx 1.5\%$) and KBTM (std $\approx 1.2\%$)---validates the algorithm's deterministic convergence properties. CATM's steeper decline (92\% $\rightarrow$ 88\%) under heavy load exposes limitations in its greedy heuristic, while KBTM's intermediate performance (96\% $\rightarrow$ 92\%) confirms key-node strategies' sensitivity to network congestion.
+
+Cost analysis (Panel b) reveals HCTM-MPF's sub-linear scaling behavior. Normalized cost increases merely 6\% across the 5$\times$ workload expansion (10 $\rightarrow$ 50 tasks), attributed to the algorithm's adaptive load balancing that prevents exponential overhead accumulation. In contrast, CATM and KBTM exhibit 13\% and 16\% cost growth respectively, indicating less efficient resource utilization under stress. The narrow error bars (std $<2$ cost units) demonstrate reproducible performance across experimental trials, essential for production deployment confidence.
+
+Runtime complexity (Panel c) validates linear scalability: correlation coefficients $R^2 > 0.98$ confirm theoretical $O(n)$ per-task processing overhead. HCTM-MPF's absolute runtime (2.24s for 50 tasks) represents only 30\% overhead relative to CATM baseline (1.72s), remaining constant across all tested scales. This overhead/performance ratio (0.52s per 3\% survival improvement) establishes favorable cost-effectiveness for real-time applications requiring sub-3-second response latencies.
+
 \subsection{Analysis and Discussion}
 
 The FAO trade network exhibits canonical small-world topology with high clustering coefficient and short characteristic path length, creating an environment conducive to efficient task migration. Community detection via greedy modularity optimization identifies five distinct trading blocs (Figure~\ref{fig:network_topology}a), reflecting geopolitical and economic alliances. The hub-and-spoke pattern, where a small number of major trading nations (marked with golden stars in Figure~\ref{fig:network_topology}b) maintain disproportionately high connectivity, provides critical redundancy for HCTM-MPF's potential field calculations. These hub nodes serve as natural aggregation points for task redistribution, enabling the algorithm to leverage network topology for superior resilience.
