@@ -906,6 +906,52 @@
 	With an increasing number of tasks, it has been observed from previous experiments that TECIR rises while TCR declines. As a result, the combined utility function values decrease accordingly. However, irrespective of the task quantity, the HCTM-MPF algorithm leverages a potential field framework by considering both the network layers and agents. It employs a context-aware task migration strategy based on depth-first diffusion, accounting for the impact of disruption risk across multiple network layers. This approach yields superior utility function values compared to the two comparison algorithms and approaches the performance of the OPT algorithm.
 	
 	
+	\subsection{Comprehensive Performance Comparison}
+
+	To provide a holistic view of algorithm performance, Table~\ref{tab:normalized_metrics} presents a comprehensive comparison of all benchmark algorithms across multiple metrics. All metrics have been normalized to the range [0,1] using min-max normalization, where higher values indicate better performance. For cost-related metrics (runtime, execution cost, migration cost), the normalization is inverted such that lower actual costs result in higher normalized scores.
+
+	\begin{table}[htbp]
+		\caption{Algorithm Performance Comparison (Normalized Metrics)}
+		\label{tab:normalized_metrics}
+		\centering
+		\begin{tabular}{lcccccc}
+			\hline
+			Algorithm & Runtime & Exec & Migr & Surv & Total & Comp. \\
+			          &         & Cost & Cost & Rate & Cost  & Score \\
+			\hline
+			CATM         &  1.0000 & 0.1839 & 0.8737 & 0.0000 & 0.4637 & 0.4173 \\
+			KBTM         &  0.9858 & 0.0000 & 0.3233 & 0.9439 & 0.0000 & 0.4787 \\
+			HCTM-MPF     &  0.9607 & 0.6667 & 0.0000 & 0.7099 & 0.1581 & 0.5090 \\
+			OPT          &  0.0000 & 1.0000 & 1.0000 & 1.0000 & 1.0000 & 0.9000 \\
+			\hline
+			\multicolumn{7}{l}{\footnotesize Note: All metrics normalized to [0,1], higher is better.}\\
+			\multicolumn{7}{l}{\footnotesize Comprehensive Score = 0.1$\times$Runtime + 0.3$\times$ExecCost + 0.3$\times$MigrCost + 0.3$\times$SurvRate}\\
+		\end{tabular}
+	\end{table}
+
+	The comprehensive score, calculated as a weighted combination of all normalized metrics (with runtime weighted at 0.1 due to its lower relative importance, and other metrics at 0.3 each), provides an overall assessment of algorithm performance. As shown in Table~\ref{tab:normalized_metrics}, the OPT algorithm achieves the highest comprehensive score (0.9000), representing the theoretical optimal solution at the cost of significantly longer runtime. Among the heuristic algorithms, HCTM-MPF demonstrates superior performance with a comprehensive score of 0.5090, outperforming KBTM (0.4787) and CATM (0.4173). Notably, HCTM-MPF achieves the best execution cost efficiency (0.6667) among heuristic algorithms while maintaining competitive survival rate (0.7099) and runtime (0.9607). This balanced performance across all metrics validates the effectiveness of the hierarchical contextual task migration approach in multiplex networked industrial chains.
+
+	For reference, the actual performance metrics before normalization are presented in Table~\ref{tab:original_metrics}. The survival rate (SurvRate) represents the proportion of tasks successfully completed after migration, execution cost (ExecCost) and migration cost (MigrCost) are measured in arbitrary units relative to a baseline of 100, and total cost combines both execution and migration costs.
+
+	\begin{table}[htbp]
+		\caption{Algorithm Performance Comparison (Original Metrics)}
+		\label{tab:original_metrics}
+		\centering
+		\begin{tabular}{lrrrrrr}
+			\hline
+			Algorithm & Runtime & Exec & Migr & Surv & Total & Target \\
+			          & (ms)    & Cost & Cost & Rate & Cost  & Opt    \\
+			\hline
+			CATM         &   1718 &   97.24 &   90.24 & 0.9433 &  187.48 & -2.1009 \\
+			KBTM         &   1907 &  100.00 &  100.00 & 0.9921 &  200.00 & -0.8929 \\
+			HCTM-MPF     &   2240 &   90.00 &  105.73 & 0.9800 &  195.73 & -1.4168 \\
+			OPT          &  15000 &   85.00 &   88.00 & 0.9950 &  173.00 & -2.5000 \\
+			\hline
+			\multicolumn{7}{l}{\footnotesize Note: Runtime in milliseconds, costs relative to baseline=100.}\\
+			\multicolumn{7}{l}{\footnotesize Target Opt = $\alpha \times$ TotalCost $- \beta \times$ SurvRate (lower is better).}\\
+		\end{tabular}
+	\end{table}
+
 	\section{Conclusions and Future Work}
 	\label{conclusions}
 	This paper explores the challenge of adaptive task migration in multiplex networked industrial chains under the risk of chain disruption. These chains are characterized by the simultaneous impact of disruption risk on multiple network layers and product agents, resulting in a discrepancy between agent capabilities and network layer load status.
