@@ -131,17 +131,42 @@ KBTM & 767 & 0.00 & 0.00 & \textbf{0.9921} & 0.00 & -0.89 \\
 \end{tabular}
 \end{table}
 
+Figure~\ref{fig:performance_comparison} provides a comprehensive visual comparison of algorithm performance across four key dimensions: survival rate, total cost, cost breakdown, and runtime efficiency.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{FAO_case_study/results/figures/performance_comparison.pdf}
+\caption{Comprehensive performance comparison of CATM and KBTM algorithms on the FAO trade network. (a) Survival rate comparison showing both algorithms achieve $>94\%$ success. (b) Total cost comparison demonstrating cost-effectiveness. (c) Cost breakdown by execution and migration components. (d) Runtime efficiency analysis.}
+\label{fig:performance_comparison}
+\end{figure}
+
+Figure~\ref{fig:performance_radar} presents a multi-dimensional performance profile using a radar chart, highlighting the relative strengths of each algorithm across normalized metrics.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{FAO_case_study/results/figures/performance_radar.pdf}
+\caption{Multi-dimensional radar chart comparing algorithm performance across five normalized dimensions. KBTM (blue) shows superior survival rate, while CATM (orange) demonstrates lower costs.}
+\label{fig:performance_radar}
+\end{figure}
+
 \subsubsection{Key Observations}
 
 \begin{enumerate}
-    \item \textbf{Exceptional Survival Rates}: Both algorithms achieve survival rates exceeding 94\%, with KBTM reaching an impressive 99.21\%. This indicates that nearly all tasks can be successfully migrated even under disruption scenarios in real-world trade networks.
+    \item \textbf{Exceptional Survival Rates}: Both algorithms achieve survival rates exceeding 94\%, with KBTM reaching an impressive 99.21\% (Figure~\ref{fig:performance_comparison}a). This indicates that nearly all tasks can be successfully migrated even under disruption scenarios in real-world trade networks.
 
-    \item \textbf{Computational Efficiency}: Despite the network size (210 nodes, 9,843 edges), both algorithms complete execution in under one second, demonstrating scalability to real-world problem sizes.
+    \item \textbf{Computational Efficiency}: Despite the network size (210 nodes, 9,843 edges), both algorithms complete execution in under one second (Figure~\ref{fig:performance_comparison}d), demonstrating scalability to real-world problem sizes.
 
-    \item \textbf{Cost-Effectiveness}: CATM shows negative costs, suggesting that task migration actually reduces overall system cost compared to no migration. KBTM achieves zero cost, indicating optimal load balancing.
+    \item \textbf{Cost-Effectiveness}: CATM shows negative costs, suggesting that task migration actually reduces overall system cost compared to no migration. KBTM achieves zero cost, indicating optimal load balancing (Figure~\ref{fig:performance_comparison}b,c).
 
-    \item \textbf{Comparison with Random Baseline}: Assuming a random baseline survival rate of 50\%, CATM achieves 88.7\% improvement while KBTM achieves 98.4\% improvement, demonstrating substantial practical value.
+    \item \textbf{Comparison with Random Baseline}: Assuming a random baseline survival rate of 50\%, CATM achieves 88.7\% improvement while KBTM achieves 98.4\% improvement, demonstrating substantial practical value. Figure~\ref{fig:improvement_analysis} visualizes these improvements over the baseline.
 \end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{FAO_case_study/results/figures/improvement_analysis.pdf}
+\caption{Improvement over 50\% random baseline. Both algorithms demonstrate substantial gains, with KBTM achieving near-perfect task survival (98.4\% improvement). The green reference line indicates the baseline performance.}
+\label{fig:improvement_analysis}
+\end{figure}
 
 \subsection{Analysis and Discussion}
 
@@ -154,6 +179,15 @@ The FAO trade network exhibits small-world properties with:
     \item Presence of hub countries with very high trade volumes
 \end{itemize}
 
+Figure~\ref{fig:network_topology} visualizes the network structure with node colors representing capacity levels. The visualization reveals the hub-and-spoke pattern characteristic of international trade, with several large trading nations (dark red nodes) serving as central hubs.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{FAO_case_study/results/figures/network_topology.pdf}
+\caption{FAO trade network topology with 210 countries and 9,843 trade connections. Node colors indicate capacity levels (dark red = high capacity trading hubs, light yellow = low capacity countries). The layout uses the Fruchterman-Reingold force-directed algorithm to reveal community structure.}
+\label{fig:network_topology}
+\end{figure}
+
 These properties facilitate effective task migration as:
 \begin{enumerate}
     \item Short paths enable efficient migration with low transportation costs
@@ -163,7 +197,16 @@ These properties facilitate effective task migration as:
 
 \subsubsection{Heterogeneity in Capacities}
 
-The substantial variation in country capacities (coefficient of variation $= 42.49/125.02 = 0.34$) tests algorithm robustness across different scales. The results show that both algorithms effectively handle:
+The substantial variation in country capacities (coefficient of variation $= 42.49/125.02 = 0.34$) tests algorithm robustness across different scales. Figure~\ref{fig:capacity_distribution} presents both the distribution histogram and box plot analysis, revealing the heterogeneous nature of the network with a right-skewed distribution and several high-capacity outliers representing major trading nations.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{FAO_case_study/results/figures/capacity_distribution.pdf}
+\caption{Capacity distribution analysis across 210 countries. (a) Histogram showing right-skewed distribution with mean capacity of 125.02 (red dashed line). (b) Box plot revealing statistical properties: median, quartiles, and high-capacity outliers representing major trading hubs.}
+\label{fig:capacity_distribution}
+\end{figure}
+
+The results show that both algorithms effectively handle:
 \begin{itemize}
     \item Small countries with limited capacity (require careful load management)
     \item Large trading hubs that can absorb significant task loads

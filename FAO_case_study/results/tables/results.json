@@ -1,0 +1,16 @@
+{
+  "CATM": {
+    "runtime_ms": 671,
+    "execution_cost": -2.759128407552767,
+    "migration_cost": -9.76054768966194,
+    "survival_rate": 0.943264305631109,
+    "total_cost": -12.519676097214708
+  },
+  "KBTM": {
+    "runtime_ms": 820,
+    "execution_cost": 0.0,
+    "migration_cost": 0.0,
+    "survival_rate": 0.9921242951708634,
+    "total_cost": 0.0
+  }
+}
