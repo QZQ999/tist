@@ -1,0 +1,7 @@
+networkx>=2.5
+numpy>=1.19.0
+
+# Optional dependencies for advanced features
+# matplotlib>=3.3.0  # For visualization
+# pandas>=1.1.0      # For data analysis
+# seaborn>=0.11.0    # For statistical visualization
