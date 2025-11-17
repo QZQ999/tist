@@ -1,20 +1,20 @@
 {
   "CATM": {
-    "runtime_ms": 758,
+    "runtime_ms": 662,
     "execution_cost": -2.759128407552767,
     "migration_cost": -9.76054768966194,
     "survival_rate": 0.943264305631109,
     "total_cost": -12.519676097214708
   },
   "KBTM": {
-    "runtime_ms": 865,
+    "runtime_ms": 797,
     "execution_cost": 0.0,
     "migration_cost": 0.0,
     "survival_rate": 0.9921242951708634,
     "total_cost": 0.0
   },
   "HCTM-MPF": {
-    "runtime_ms": 1235,
+    "runtime_ms": 1127,
     "execution_cost": -10.0,
     "migration_cost": 5.731907594844627,
     "survival_rate": 1.1,

@@ -102,7 +102,8 @@ def save_results_table(results: Dict, filename: str = "results/tables/results.tx
     print(f"  - {json_file}")
 
 
-def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: float = 0.9, seed: int = 42):
+def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: float = 0.9, seed: int = 42,
+                   run_opt: bool = False, opt_task_limit: int = 12):
     """
     Run complete FAO case study experiment.
 
@@ -112,6 +113,8 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
         a: Weight for cost
         b: Weight for survival rate
         seed: Random seed
+        run_opt: Whether to run OPT algorithm (exponential complexity)
+        opt_task_limit: Maximum tasks for OPT (due to exponential complexity)
     """
     print_header("FAO FOOD TRADE NETWORK CASE STUDY")
     print("Dataset: FAO Multiplex Trade Network (2010)")
@@ -189,7 +192,7 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
     results = {}
 
     # 1. CATM (LTM)
-    print("\n[1/3] Running CATM (Context-Aware Task Migration)...")
+    print("\n[1/4] Running CATM (Context-Aware Task Migration)...")
     tasks_ltm = reader.read_file_to_tasks(task_file)
     arc_graph_ltm = reader.read_file_to_graph(graph_file)
     robots_ltm = reader.read_file_to_robots(robot_file)
@@ -213,7 +216,7 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
     print(f"  ✓ Total Cost: {results['CATM']['total_cost']:.4f}")
 
     # 2. KBTM (GreedyPath)
-    print("\n[2/3] Running KBTM (Key-Based Task Migration)...")
+    print("\n[2/4] Running KBTM (Key-Based Task Migration)...")
     tasks_greedy = reader.read_file_to_tasks(task_file)
     arc_graph_greedy = reader.read_file_to_graph(graph_file)
     robots_greedy = reader.read_file_to_robots(robot_file)
@@ -237,7 +240,7 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
     print(f"  ✓ Total Cost: {results['KBTM']['total_cost']:.4f}")
 
     # 3. HCTM-MPF (MPFTM - Proposed Algorithm)
-    print("\n[3/3] Running HCTM-MPF (Proposed Algorithm with Potential Field)...")
+    print("\n[3/4] Running HCTM-MPF (Proposed Algorithm with Potential Field)...")
     try:
         tasks_mpftm = reader.read_file_to_tasks(task_file)
         arc_graph_mpftm = reader.read_file_to_graph(graph_file)
@@ -264,6 +267,54 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
         print(f"  ✗ ERROR: HCTM-MPF encountered an error: {e}")
         print(f"     This algorithm may have numerical issues with certain network topologies.")
         print(f"     Continuing with results from CATM and KBTM...")
+
+    # 4. OPT (Optimal Solution with subset of tasks)
+    if run_opt:
+        print(f"\n[4/4] Running OPT (Optimal Solution on {opt_task_limit} tasks subset)...")
+        print(f"     Note: OPT has exponential complexity O(2^n). Using {opt_task_limit}/{num_tasks} tasks.")
+
+        try:
+            # Create subset task file for OPT
+            tasks_opt_full = reader.read_file_to_tasks(task_file)
+            tasks_opt = tasks_opt_full[:opt_task_limit]  # Use first N tasks
+
+            # Write subset to temp file
+            opt_task_file = os.path.join(output_dir, "FAO_Trade_Tasks_OPT.txt")
+            with open(opt_task_file, 'w') as f:
+                f.write(f"{len(tasks_opt)}\n")
+                for task in tasks_opt:
+                    f.write(f"{task.task_id} {task.size} {task.arrive_time}\n")
+
+            # Run OPT on subset
+            tasks_opt_run = reader.read_file_to_tasks(opt_task_file)
+            arc_graph_opt = reader.read_file_to_graph(graph_file)
+            robots_opt = reader.read_file_to_robots(robot_file)
+
+            opt = Opt(tasks_opt_run, arc_graph_opt, robots_opt, a, b)
+            start_time = time.time()
+            result_opt = opt.opt_run()
+            runtime_opt = int((time.time() - start_time) * 1000)
+
+            results['OPT'] = {
+                'result': result_opt,
+                'runtime': runtime_opt,
+                'exec_cost': result_opt.mean_execute_cost,
+                'migr_cost': result_opt.mean_migration_cost,
+                'surv_rate': result_opt.mean_survival_rate,
+                'total_cost': result_opt.mean_execute_cost + result_opt.mean_migration_cost
+            }
+
+            print(f"  ✓ Runtime: {runtime_opt}ms ({opt_task_limit} tasks)")
+            print(f"  ✓ Survival Rate: {result_opt.mean_survival_rate:.4f} ({result_opt.mean_survival_rate*100:.2f}%)")
+            print(f"  ✓ Total Cost: {results['OPT']['total_cost']:.4f}")
+            print(f"  ℹ OPT provides theoretical bound on subset, not full comparison")
+        except Exception as e:
+            print(f"  ✗ ERROR: OPT encountered an error: {e}")
+            print(f"     OPT may time out or fail on complex instances")
+    else:
+        print(f"\n[4/4] Skipping OPT (Optimal Solution)")
+        print(f"     OPT has exponential complexity and is computationally expensive.")
+        print(f"     Set run_opt=True to enable (recommended: <15 tasks)")
 
     # STEP 6: Display Results
     print_header("EXPERIMENTAL RESULTS")
