@@ -39,6 +39,15 @@ For our case study, we select the top 10 food products by total trade volume to 
 
 \subsection{Experimental Setup}
 
+Figure~\ref{fig:network_capacity} presents the topological structure and capacity distribution of the FAO trade network used in our experiments. The network comprises 214 countries connected through 9,843 trade relationships, exhibiting hub-and-spoke topology with marked capacity heterogeneity across nations.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{Figure/network_and_capacity.pdf}
+\caption{Network topology and capacity analysis. (a) FAO trade network structure comprising 214 countries and 9843 connections with node sizes proportional to degree centrality and colors indicating trade capacity using yellow to red gradient. Golden stars mark top-5 trading hubs. (b) Country capacity distribution histogram with mean of 122.9, standard deviation of 44.9, and coefficient of variation CV of 0.37, showing right-skewed heterogeneous infrastructure with color-coded capacity groups: low below 50 in orange, medium from 50 to 100 in light blue, high from 100 to 150 in cyan, and very high above 150 in salmon. Red dashed line indicates mean while orange dotted lines show plus or minus 1 std bounds.}
+\label{fig:network_capacity}
+\end{figure}
+
 \subsubsection{Network Construction}
 
 We aggregate trade relationships across the selected 10 product categories to construct a single weighted undirected network suitable for task migration analysis. The aggregation process sums trade volumes across product layers and converts directed trade links to undirected edges, yielding a network comprising 210 countries and 9,843 edges. After excluding 4 countries with no trade connections in the selected products, the resulting network exhibits density 0.2159, indicating highly connected trade infrastructure. The network decomposes into 5 weakly connected components with the largest component containing all 210 countries.
@@ -106,7 +115,7 @@ To evaluate algorithmic robustness under varying computational loads, we conduct
 
 \begin{figure*}[htbp]
 \centering
-\includegraphics[width=\textwidth]{FAO_case_study/results/figures/scalability_analysis.pdf}
+\includegraphics[width=\textwidth]{Figure/scalability_analysis.pdf}
 \caption{Scalability analysis with statistical significance showing mean $\pm$ std from $n=5$ independent runs. (a) Task survival rate remains stable across workloads with HCTM-MPF maintaining 95 to 98\% survival with lowest variance at std less than 1\%, demonstrating superior robustness. CATM degrades to 88\% at 50 tasks while KBTM stabilizes at 92\%. (b) System cost scales sub-linearly with HCTM-MPF exhibiting minimal cost growth from 38.4 to 40.8 representing $\Delta=6\%$ versus CATM at $\Delta=13\%$ and KBTM at $\Delta=16\%$. Error bars indicate HCTM-MPF's consistent performance across trials. (c) Computational complexity shows runtime growing linearly with $R^2>0.98$ for all algorithms, validating theoretical $O(n)$ task processing complexity. HCTM-MPF's 30\% overhead versus CATM remains constant across scales, confirming practical deployability for production systems handling 50 or more concurrent tasks.}
 \label{fig:scalability}
 \end{figure*}
@@ -120,13 +129,6 @@ Runtime complexity in Panel (c) validates linear scalability with correlation co
 \subsection{Analysis and Discussion}
 
 The FAO trade network exhibits canonical small-world topology with high clustering coefficient and short characteristic path length, creating an environment conducive to efficient task migration as shown in Figure~\ref{fig:network_capacity}a. The network displays hub-and-spoke structure where major trading nations marked with golden stars maintain disproportionately high degree centrality, providing critical redundancy for HCTM-MPF's potential field calculations. These hub nodes serve as natural aggregation points for task redistribution, enabling the algorithm to leverage network topology for superior resilience. Capacity heterogeneity is quantified by coefficient of variation $CV = 0.37$ in Figure~\ref{fig:network_capacity}b, introducing significant load balancing challenges with right-skewed distribution showing high-capacity outliers exhibiting 10 times greater throughput than median nodes. HCTM-MPF's hierarchical clustering mechanism explicitly accounts for this heterogeneity through capacity-weighted leader selection, achieving load balance coefficient $0.89\pm0.01$ compared to CATM's $0.73\pm0.01$. By constructing dynamic leader-follower relationships based on joint capacity-centrality metrics, HCTM-MPF prevents hub overload while activating peripheral nodes, explaining its superior survival rate of $98.0\pm0.4$\%.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{FAO_case_study/results/figures/network_and_capacity.pdf}
-\caption{Network topology and capacity analysis. (a) FAO trade network structure comprising 214 countries and 9843 connections with node sizes proportional to degree centrality and colors indicating trade capacity using yellow to red gradient. Golden stars mark top-5 trading hubs. (b) Country capacity distribution histogram with mean of 122.9, standard deviation of 44.9, and coefficient of variation CV of 0.37, showing right-skewed heterogeneous infrastructure with color-coded capacity groups: low below 50 in orange, medium from 50 to 100 in light blue, high from 100 to 150 in cyan, and very high above 150 in salmon. Red dashed line indicates mean while orange dotted lines show plus or minus 1 std bounds.}
-\label{fig:network_capacity}
-\end{figure}
 
 Task generation based on empirical trade volumes ensures ecological validity. By sampling migration routes proportionally to actual commodity flows where task probability is proportional to trade volume, our experiments capture realistic spatial-temporal patterns absent in synthetic benchmarks. The strong performance of HCTM-MPF with 98\% survival and cost of 38.4 under these realistic workloads, achieving 95.5\% of OPT's theoretical optimum, validates practical deployability beyond idealized scenarios.
 
