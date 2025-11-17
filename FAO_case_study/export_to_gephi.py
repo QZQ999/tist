@@ -34,6 +34,10 @@ def export_to_gephi():
     print(f"  Edges: {G.number_of_edges()}")
     print(f"  Density: {nx.density(G):.4f}")
 
+    # Get country names mapping from loader
+    country_names = loader.nodes  # node_id -> country_name mapping
+    print(f"  Country names: {len(country_names)} loaded")
+
     # Calculate network metrics for visualization
     print("\nCalculating network metrics...")
 
@@ -61,7 +65,10 @@ def export_to_gephi():
     # Add node attributes
     print("Adding node attributes...")
     for node in G.nodes():
-        G.nodes[node]['label'] = f"Country_{node}"
+        # Use actual country name from FAO data
+        country_name = country_names.get(node, f"Unknown_{node}")
+        G.nodes[node]['label'] = country_name
+        G.nodes[node]['name'] = country_name  # Also set 'name' attribute for GEXF
         G.nodes[node]['capacity'] = float(capacities.get(node, 10))
         G.nodes[node]['degree'] = G.degree(node)
         G.nodes[node]['degree_centrality'] = float(degree_centrality[node])
