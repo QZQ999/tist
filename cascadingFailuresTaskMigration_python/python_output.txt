@@ -1,0 +1,22 @@
+greedyRobotRun
+程序运行时间: 0ms
+meanExecuteCost: 43.435271453007154
+meanMigrationCost: 16.827007161478047
+meanSurvivalRate: 0.69934844058413
+robotLoadStd: 1.8027756377319946
+taskSizeStd: 3.783874777702525
+meanRobotCapacity: 5.0
+meanTaskSize: 8.625
+targetOpt: 5.396814264922803
+*******************************
+                               
+mpfmRun
+程序运行时间: 1ms
+meanExecuteCost: 36.33571428571429
+meanMigrationCost: 5.336374815409754
+meanSurvivalRate: 0.7623824122875934
+robotLoadStd: 1.8027756377319946
+taskSizeStd: 3.783874777702525
+meanRobotCapacity: 5.0
+meanTaskSize: 8.625
+targetOpt: 3.4810647390535703
