@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """
 Create merged network topology and capacity distribution figure
-Left panel: Network topology with community structure and hub identification
+Left panel: Professional Gephi-generated network visualization
 Right panel: Capacity distribution histogram with statistics
 """
 import sys
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import matplotlib.cm as cm
-from matplotlib.colors import Normalize
 import numpy as np
-import networkx as nx
+from PIL import Image
 
 # Add paths
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,9 +26,9 @@ plt.rcParams['font.size'] = 10
 
 
 def create_merged_network_capacity_figure():
-    """Create merged figure with network topology (left) and capacity distribution (right)"""
+    """Create merged figure with Gephi network (left) and capacity distribution (right)"""
 
-    # Load FAO data
+    # Load FAO data for capacity statistics
     fao_data_dir = os.path.join(current_dir, 'data', 'FAO_Multiplex_Trade', 'Dataset')
     loader = FAODataLoader(data_dir=fao_data_dir)
 
@@ -43,70 +41,26 @@ def create_merged_network_capacity_figure():
     # Create figure with 1 row, 2 columns
     fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(16, 7))
 
-    # ====== LEFT PANEL: Network Topology with Community & Hubs ======
-    print("Computing network metrics...")
-    degree_centrality = nx.degree_centrality(G)
-    betweenness_centrality = nx.betweenness_centrality(G, k=min(100, G.number_of_nodes()))
+    # ====== LEFT PANEL: Load and display Gephi-generated network image ======
+    print("Loading Gephi network visualization...")
+    gephi_image_path = os.path.join(current_dir, 'results', 'gephi', 'gephi.png')
 
-    # Detect communities
-    print("Detecting communities...")
-    try:
-        from networkx.algorithms import community
-        communities = community.greedy_modularity_communities(G)
-        node_to_community = {}
-        for idx, comm in enumerate(communities):
-            for node in comm:
-                node_to_community[node] = idx
-    except:
-        node_to_community = {node: 0 for node in G.nodes()}
-        communities = [set(G.nodes())]
-
-    # Compute layout using spring layout (no scipy required)
-    print("Computing layout...")
-    pos = nx.spring_layout(G, k=0.5, iterations=50, seed=42)
-
-    # Prepare node colors based on capacity (gradient)
-    capacities_array = np.array([capacities.get(node, 10) for node in G.nodes()])
-    norm = Normalize(vmin=capacities_array.min(), vmax=capacities_array.max())
-    cmap = cm.YlOrRd  # Yellow-Orange-Red colormap
-
-    # Node sizes based on degree centrality
-    node_sizes = np.array([degree_centrality[node] * 2500 + 80 for node in G.nodes()])
-
-    # Draw network
-    nx.draw_networkx_edges(G, pos, alpha=0.12, width=0.3, edge_color='gray', ax=ax_left)
-
-    # Draw nodes with capacity coloring
-    scatter = ax_left.scatter([pos[node][0] for node in G.nodes()],
-                             [pos[node][1] for node in G.nodes()],
-                             s=node_sizes, c=capacities_array, cmap=cmap,
-                             alpha=0.85, edgecolors='black', linewidths=0.6,
-                             zorder=5)
-
-    # Highlight top 5 hub nodes with golden stars
-    top_hubs = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)[:5]
-    for hub_node, cent in top_hubs:
-        x, y = pos[hub_node]
-        ax_left.scatter(x, y, s=1800, marker='*', c='gold', edgecolors='darkred',
-                       linewidths=2.5, zorder=10, alpha=0.95)
-
-    ax_left.set_title('(a) FAO Trade Network Topology\n' +
-                      f'({G.number_of_nodes()} countries, {G.number_of_edges()} trade connections)',
-                      fontsize=12, fontweight='bold', pad=10)
-    ax_left.axis('off')
-
-    # Add colorbar for capacity
-    cbar = plt.colorbar(scatter, ax=ax_left, fraction=0.046, pad=0.04)
-    cbar.set_label('Trade Capacity', fontweight='bold', fontsize=10)
-
-    # Add legend for hub stars
-    legend_elements = [
-        plt.Line2D([0], [0], marker='*', color='w', markerfacecolor='gold',
-                  markeredgecolor='darkred', markeredgewidth=2, markersize=15,
-                  label='Top-5 Trading Hubs')
-    ]
-    ax_left.legend(handles=legend_elements, loc='upper left', frameon=True,
-                  fontsize=10, framealpha=0.9)
+    if os.path.exists(gephi_image_path):
+        gephi_img = Image.open(gephi_image_path)
+        ax_left.imshow(gephi_img)
+        ax_left.axis('off')
+        ax_left.set_title('(a) FAO Trade Network Topology\n' +
+                          f'({G.number_of_nodes()} countries, {G.number_of_edges()} trade connections)',
+                          fontsize=12, fontweight='bold', pad=10)
+        print(f"  Loaded Gephi image from {gephi_image_path}")
+    else:
+        # Fallback: show message if gephi.png not found
+        ax_left.text(0.5, 0.5, 'Gephi visualization\ngephi.png not found\n\nPlease export from Gephi and save as:\n' + gephi_image_path,
+                    ha='center', va='center', fontsize=12, transform=ax_left.transAxes)
+        ax_left.axis('off')
+        ax_left.set_title('(a) FAO Trade Network Topology',
+                          fontsize=12, fontweight='bold', pad=10)
+        print(f"  Warning: Gephi image not found at {gephi_image_path}")
 
     # ====== RIGHT PANEL: Capacity Distribution ======
     capacities_list = list(capacities.values())
@@ -181,3 +135,4 @@ def create_merged_network_capacity_figure():
 
 if __name__ == "__main__":
     create_merged_network_capacity_figure()
+
