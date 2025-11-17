@@ -35,6 +35,11 @@ class Reader:
                 if not line:
                     continue
                 parts = line.split()
+
+                # Skip header line (task count) - has only 1 element
+                if len(parts) == 1:
+                    continue
+
                 task = Task(
                     task_id=int(parts[0]),
                     size=float(parts[1]),
