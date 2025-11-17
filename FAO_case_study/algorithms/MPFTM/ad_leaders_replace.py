@@ -51,7 +51,11 @@ class AdLeadersReplace:
 
         for ad_leader in ad_leaders:
             bc_value = betweenness_centrality.get(ad_leader.robot_id, 0.0)
-            iscore = (bc_value + 1) / (1 - (1 - ad_leader.fault_a) * (1 - ad_leader.fault_o))
+            # Add epsilon to avoid division by zero when fault_a and fault_o are both 0
+            denominator = 1 - (1 - ad_leader.fault_a) * (1 - ad_leader.fault_o)
+            if abs(denominator) < 1e-10:
+                denominator = 1e-10  # Small epsilon to prevent division by zero
+            iscore = (bc_value + 1) / denominator
             if iscore > max_iscore:
                 replace_leader = ad_leader
                 max_iscore = iscore

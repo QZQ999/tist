@@ -32,6 +32,8 @@ from typing import Dict
 from input.reader import Reader
 from LTM.ltm import LTM
 from greedyPath.greedy_path import GreedyPath
+from MPFTM.mpftm import MPFTM
+from opt.opt import Opt
 from evaluation.evaluation_etra_target import EvaluationEtraTarget
 
 # Import data loader
@@ -187,7 +189,7 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
     results = {}
 
     # 1. CATM (LTM)
-    print("\n[1/2] Running CATM (Context-Aware Task Migration)...")
+    print("\n[1/3] Running CATM (Context-Aware Task Migration)...")
     tasks_ltm = reader.read_file_to_tasks(task_file)
     arc_graph_ltm = reader.read_file_to_graph(graph_file)
     robots_ltm = reader.read_file_to_robots(robot_file)
@@ -211,7 +213,7 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
     print(f"  ✓ Total Cost: {results['CATM']['total_cost']:.4f}")
 
     # 2. KBTM (GreedyPath)
-    print("\n[2/2] Running KBTM (Key-Based Task Migration)...")
+    print("\n[2/3] Running KBTM (Key-Based Task Migration)...")
     tasks_greedy = reader.read_file_to_tasks(task_file)
     arc_graph_greedy = reader.read_file_to_graph(graph_file)
     robots_greedy = reader.read_file_to_robots(robot_file)
@@ -233,6 +235,35 @@ def run_experiment(top_k: int = 10, num_tasks: int = 50, a: float = 0.1, b: floa
     print(f"  ✓ Runtime: {runtime_greedy}ms")
     print(f"  ✓ Survival Rate: {result_greedy.mean_survival_rate:.4f} ({result_greedy.mean_survival_rate*100:.2f}%)")
     print(f"  ✓ Total Cost: {results['KBTM']['total_cost']:.4f}")
+
+    # 3. HCTM-MPF (MPFTM - Proposed Algorithm)
+    print("\n[3/3] Running HCTM-MPF (Proposed Algorithm with Potential Field)...")
+    try:
+        tasks_mpftm = reader.read_file_to_tasks(task_file)
+        arc_graph_mpftm = reader.read_file_to_graph(graph_file)
+        robots_mpftm = reader.read_file_to_robots(robot_file)
+
+        mpftm = MPFTM(tasks_mpftm, arc_graph_mpftm, robots_mpftm, a, b)
+        start_time = time.time()
+        result_mpftm = mpftm.mpfm_run()
+        runtime_mpftm = int((time.time() - start_time) * 1000)
+
+        results['HCTM-MPF'] = {
+            'result': result_mpftm,
+            'runtime': runtime_mpftm,
+            'exec_cost': result_mpftm.mean_execute_cost,
+            'migr_cost': result_mpftm.mean_migration_cost,
+            'surv_rate': result_mpftm.mean_survival_rate,
+            'total_cost': result_mpftm.mean_execute_cost + result_mpftm.mean_migration_cost
+        }
+
+        print(f"  ✓ Runtime: {runtime_mpftm}ms")
+        print(f"  ✓ Survival Rate: {result_mpftm.mean_survival_rate:.4f} ({result_mpftm.mean_survival_rate*100:.2f}%)")
+        print(f"  ✓ Total Cost: {results['HCTM-MPF']['total_cost']:.4f}")
+    except Exception as e:
+        print(f"  ✗ ERROR: HCTM-MPF encountered an error: {e}")
+        print(f"     This algorithm may have numerical issues with certain network topologies.")
+        print(f"     Continuing with results from CATM and KBTM...")
 
     # STEP 6: Display Results
     print_header("EXPERIMENTAL RESULTS")

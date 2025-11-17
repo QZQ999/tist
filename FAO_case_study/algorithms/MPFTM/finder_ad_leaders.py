@@ -45,8 +45,11 @@ class FinderAdLeaders:
                 # Functional fault occurred, backup suitability is at minimum
             else:
                 # betweenness_centrality + 1, so shortest path includes self to self, minimum betweenness centrality is 1
-                iscore = (betweenness_centrality.get(robot_id, 0.0) + 1) / \
-                        (1 - (1 - robot.fault_a) * (1 - robot.fault_o))
+                # Add epsilon to avoid division by zero when fault_a and fault_o are both 0
+                denominator = 1 - (1 - robot.fault_a) * (1 - robot.fault_o)
+                if abs(denominator) < 1e-10:
+                    denominator = 1e-10  # Small epsilon to prevent division by zero
+                iscore = (betweenness_centrality.get(robot_id, 0.0) + 1) / denominator
 
                 leader_id = group.leader.robot_id
                 d = shortest_path_dict.get((leader_id, robot.robot_id), 100000.0)

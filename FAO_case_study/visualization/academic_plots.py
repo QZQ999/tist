@@ -37,14 +37,15 @@ class AcademicPlotter:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
-        # Color scheme (colorblind-friendly)
+        # Color scheme (colorblind-friendly Wong 2011 palette)
         self.colors = {
-            'CATM': '#E69F00',  # Orange
-            'KBTM': '#56B4E9',  # Sky Blue
-            'HCTM-MPF': '#009E73',  # Green
-            'primary': '#0072B2',  # Blue
-            'secondary': '#D55E00',  # Vermillion
-            'accent': '#CC79A7'  # Purple
+            'CATM': '#E69F00',      # Orange
+            'KBTM': '#56B4E9',      # Sky Blue
+            'HCTM-MPF': '#009E73',  # Bluish Green
+            'OPT': '#CC79A7',       # Reddish Purple
+            'primary': '#0072B2',   # Blue
+            'secondary': '#D55E00', # Vermillion
+            'accent': '#F0E442'     # Yellow
         }
 
     def plot_performance_comparison(self, results: Dict, save_name: str = "performance_comparison.pdf"):
@@ -144,66 +145,120 @@ class AcademicPlotter:
         print(f"Saved performance comparison to {save_path}")
 
     def plot_network_topology(self, G: nx.Graph, node_capacities: Dict,
-                             save_name: str = "network_topology.pdf", sample_size: int = 100):
+                             save_name: str = "network_topology.pdf"):
         """
-        Plot network topology visualization.
+        Plot professional network topology visualization with community structure.
 
         Args:
             G: NetworkX graph
             node_capacities: Dictionary of node capacities
             save_name: Output filename
-            sample_size: Number of nodes to sample for visualization
         """
-        # Sample nodes for visualization (full network is too dense)
-        if G.number_of_nodes() > sample_size:
-            # Get nodes with highest capacities
-            sorted_nodes = sorted(node_capacities.items(), key=lambda x: x[1], reverse=True)
-            top_nodes = [n for n, _ in sorted_nodes[:sample_size]]
-            G_sample = G.subgraph(top_nodes).copy()
+        import matplotlib.cm as cm
+        from matplotlib.colors import Normalize
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+
+        # Calculate network centrality metrics
+        print("  Computing network centrality metrics...")
+        degree_centrality = nx.degree_centrality(G)
+        betweenness_centrality = nx.betweenness_centrality(G, k=min(100, G.number_of_nodes()))
+
+        # Detect communities using Louvain algorithm (greedy modularity)
+        print("  Detecting community structure...")
+        try:
+            from networkx.algorithms import community
+            communities = community.greedy_modularity_communities(G)
+            # Create community membership dict
+            node_to_community = {}
+            for idx, comm in enumerate(communities):
+                for node in comm:
+                    node_to_community[node] = idx
+        except:
+            # Fallback: assign all to one community
+            node_to_community = {node: 0 for node in G.nodes()}
+            communities = [set(G.nodes())]
+
+        # Use Kamada-Kawai layout for better structure visualization
+        print("  Computing network layout...")
+        # For large networks, use subset for initial layout
+        if G.number_of_nodes() > 150:
+            # Sample high-degree nodes for layout seed
+            high_degree_nodes = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)[:150]
+            seed_nodes = [n for n, _ in high_degree_nodes]
+            G_seed = G.subgraph(seed_nodes)
+            pos_seed = nx.kamada_kawai_layout(G_seed)
+            # Complete with spring layout
+            pos = nx.spring_layout(G, pos=pos_seed, k=0.3, iterations=20, seed=42)
         else:
-            G_sample = G
+            pos = nx.kamada_kawai_layout(G)
 
-        fig, ax = plt.subplots(figsize=(12, 10))
+        # ====== Panel 1: Community Structure with Capacity ======
+        # Node colors based on community
+        num_communities = len(communities)
+        community_colors = cm.Set3(np.linspace(0, 1, num_communities))
+        node_colors_comm = [community_colors[node_to_community.get(node, 0)] for node in G.nodes()]
 
-        # Use spring layout for better visualization
-        pos = nx.spring_layout(G_sample, k=0.5, iterations=50, seed=42)
+        # Node sizes based on degree centrality (network importance)
+        node_sizes_cent = np.array([degree_centrality[node] * 3000 + 50 for node in G.nodes()])
 
-        # Node sizes proportional to capacity
-        node_sizes = [node_capacities.get(node, 10) * 5 for node in G_sample.nodes()]
+        # Draw edges first (background)
+        nx.draw_networkx_edges(G, pos, alpha=0.15, width=0.3, edge_color='gray', ax=ax1)
 
-        # Node colors based on capacity groups
-        node_colors = []
-        for node in G_sample.nodes():
-            cap = node_capacities.get(node, 10)
-            if cap < 50:
-                node_colors.append('#FDB462')  # Light orange - Low
-            elif cap < 100:
-                node_colors.append('#80B1D3')  # Light blue - Medium
-            elif cap < 150:
-                node_colors.append('#8DD3C7')  # Light green - High
-            else:
-                node_colors.append('#FB8072')  # Light red - Very High
+        # Draw nodes with community colors
+        nx.draw_networkx_nodes(G, pos, node_size=node_sizes_cent, node_color=node_colors_comm,
+                              alpha=0.8, edgecolors='black', linewidths=0.5, ax=ax1)
 
-        # Draw network
-        nx.draw_networkx_nodes(G_sample, pos, node_size=node_sizes, node_color=node_colors,
-                              alpha=0.7, edgecolors='black', linewidths=1.5, ax=ax)
+        ax1.set_title('(a) Community Structure & Network Centrality\n' +
+                     f'({G.number_of_nodes()} countries, {G.number_of_edges()} connections, '
+                     f'{num_communities} communities)', fontsize=11, fontweight='bold')
+        ax1.axis('off')
 
-        nx.draw_networkx_edges(G_sample, pos, alpha=0.2, width=0.5, ax=ax)
+        # Add legend for communities
+        if num_communities <= 8:
+            legend_elements_comm = [
+                mpatches.Patch(facecolor=community_colors[i], edgecolor='black',
+                             label=f'Community {i+1} ({len(communities[i])} countries)')
+                for i in range(min(num_communities, 8))
+            ]
+            ax1.legend(handles=legend_elements_comm, title='Trade Communities',
+                      loc='upper left', frameon=True, fontsize=8)
 
-        # Legend
-        legend_elements = [
-            mpatches.Patch(facecolor='#FB8072', edgecolor='black', label='Very High (≥150)'),
-            mpatches.Patch(facecolor='#8DD3C7', edgecolor='black', label='High (100-150)'),
-            mpatches.Patch(facecolor='#80B1D3', edgecolor='black', label='Medium (50-100)'),
-            mpatches.Patch(facecolor='#FDB462', edgecolor='black', label='Low (<50)')
-        ]
-        ax.legend(handles=legend_elements, title='Country Capacity', loc='upper left',
-                 frameon=True, fancybox=True, shadow=True)
+        # ====== Panel 2: Capacity Distribution with Hubs ======
+        # Node colors based on capacity (gradient)
+        capacities_array = np.array([node_capacities.get(node, 10) for node in G.nodes()])
+        norm = Normalize(vmin=capacities_array.min(), vmax=capacities_array.max())
+        cmap = cm.YlOrRd  # Yellow-Orange-Red colormap
+        node_colors_cap = cmap(norm(capacities_array))
 
-        ax.set_title(f'FAO International Trade Network Topology\n({G_sample.number_of_nodes()} countries, '
-                    f'{G_sample.number_of_edges()} trade connections)',
-                    fontsize=14, fontweight='bold', pad=20)
-        ax.axis('off')
+        # Node sizes based on capacity
+        node_sizes_cap = (capacities_array - capacities_array.min()) / (capacities_array.max() - capacities_array.min()) * 800 + 100
+
+        # Draw edges
+        nx.draw_networkx_edges(G, pos, alpha=0.15, width=0.3, edge_color='gray', ax=ax2)
+
+        # Draw nodes with capacity colors
+        scatter = ax2.scatter([pos[node][0] for node in G.nodes()],
+                             [pos[node][1] for node in G.nodes()],
+                             s=node_sizes_cap, c=capacities_array, cmap=cmap,
+                             alpha=0.8, edgecolors='black', linewidths=0.5)
+
+        # Highlight top 5 hub nodes
+        top_hubs = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)[:5]
+        for hub_node, cent in top_hubs:
+            x, y = pos[hub_node]
+            # Draw star marker
+            ax2.scatter(x, y, s=1500, marker='*', c='gold', edgecolors='darkred',
+                       linewidths=2, zorder=10, alpha=0.9)
+
+        ax2.set_title('(b) Trade Capacity Distribution & Hub Identification\n' +
+                     f'(Node size ∝ capacity, stars = top 5 hubs by degree centrality)',
+                     fontsize=11, fontweight='bold')
+        ax2.axis('off')
+
+        # Add colorbar for capacity
+        cbar = plt.colorbar(scatter, ax=ax2, fraction=0.046, pad=0.04)
+        cbar.set_label('Trade Capacity', fontweight='bold')
 
         plt.tight_layout()
         save_path = os.path.join(self.output_dir, save_name)
